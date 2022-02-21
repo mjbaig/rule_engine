@@ -12,44 +12,37 @@ pub enum Type {
 
 pub struct Float64 {
     pub value: f64,
+    integral: i64,
+    fractional: i64,
 }
 
 impl Float64 {
     pub fn new(value: f64) -> Self {
-        Float64 { value }
-    }
+        let integral = value as i64;
 
-    pub fn integer_decode(&self) -> (u64, i16, i8) {
-        let bits: u64 = unsafe { mem::transmute(&self.value) };
-        let sign: i8 = if bits >> 63 == 0 { 1 } else { -1 };
-        let mut exponent: i16 = ((bits >> 52) & 0x7ff) as i16;
-        let mantissa = if exponent == 0 {
-            (bits & 0xfffffffffffff) << 1
-        } else {
-            (bits & 0xfffffffffffff) | 0x10000000000000
-        };
+        let fractional = ((value - (integral as f64)) * 1000.0) as i64;
 
-        exponent -= 1023 + 52;
-        (mantissa, exponent, sign)
+        Float64 {
+            value,
+            integral,
+            fractional,
+        }
     }
 }
 
 impl Hash for Float64 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.integer_decode().hash(state)
+        (self.integral, self.fractional).hash(state)
     }
 }
 
 impl PartialEq for Float64 {
     fn eq(&self, other: &Float64) -> bool {
-        let value = self.integer_decode();
-        let other = other.integer_decode();
-
-        return value.0 == other.0 && value.1 == other.1 && value.2 == other.2;
+        self.fractional == other.fractional && self.integral == other.integral
     }
 
     fn ne(&self, other: &Self) -> bool {
-        self.integer_decode() != other.integer_decode()
+        self.fractional != other.fractional || self.integral != other.integral
     }
 }
 
@@ -71,11 +64,22 @@ mod tests {
     }
 
     #[test]
+    fn it_works2() {
+        let t: f32 = 1.5;
+
+        let y: i32 = t as i32;
+
+        let f = ((t - (y as f32)) * 1000.0) as i32;
+
+        println!("{}.{}", y, f);
+    }
+
+    #[test]
     fn float64_hash_words() {
-        let t = Type::Float64(Float64::new(2.1994));
+        let t = Type::Float64(Float64::new(2.19));
 
         match t {
-            Type::Float64(a) => assert!(a.eq(&Float64::new(2.1994))),
+            Type::Float64(a) => assert!(a.eq(&Float64::new(2.19))),
             _ => panic!("These values aren't equal"),
         }
     }
