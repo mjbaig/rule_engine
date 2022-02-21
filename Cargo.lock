@@ -3,5 +3,14 @@
 version = 3
 
 [[package]]
+name = "evalexpr"
+version = "7.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90c8b61e4acbb2e4fbcf9d4c7af4d431f38c2a60b975b1d03d0276fbb032ec5d"
+
+[[package]]
 name = "rule_engine"
 version = "0.1.0"
+dependencies = [
+ "evalexpr",
+]
